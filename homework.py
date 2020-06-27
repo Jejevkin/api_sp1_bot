@@ -17,17 +17,20 @@ BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 def parse_homework_status(homework):
     status = homework.get('status')
     homework_name = homework.get('homework_name')
-    if status is None:
-        return 'Сервер не передает статус домашнего задания.'
-    elif homework_name is None:
-        return 'Сервер не передает название домашнего задания.'
+    statuses_types = {
+        'approved': 'Ревьюеру всё понравилось, можно приступать к '
+                    'следующему уроку.',
+        'rejected': 'К сожалению в работе нашлись ошибки.'
+    }
+    if status is None or homework_name is None:
+        return 'Неизвестная структура ответа сервера.'
+    if status == 'approved':
+        verdict = statuses_types['approved']
+    elif status == 'rejected':
+        verdict = statuses_types['rejected']
     else:
-        if homework.get('status') != 'approved':
-            verdict = 'К сожалению в работе нашлись ошибки.'
-        else:
-            verdict = 'Ревьюеру всё понравилось, ' \
-                      'можно приступать к следующему уроку.'
-        return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+        verdict = f'Неизвестный статус домашнего задания: {status}'
+    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
 
 def get_homework_statuses(current_timestamp):
@@ -36,9 +39,16 @@ def get_homework_statuses(current_timestamp):
     }
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     method = 'user_api/homework_statuses/'
-    response = requests.get(f'{URL_PRACTICUM_API}{method}',
-                            headers=headers, params=params)
-    return response.json()
+    try:
+        response = requests.get(f'{URL_PRACTICUM_API}{method}',
+                                headers=headers, params=params)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f'requests.get: {e}')
+    try:
+        homework_statuses = response.json()
+    except ValueError as e:
+        raise ValueError(f'.json(): {e}')
+    return homework_statuses
 
 
 def send_message(message):
