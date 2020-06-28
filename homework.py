@@ -17,7 +17,7 @@ BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
 logger = logging.getLogger("Botlog")
 logger.setLevel(logging.INFO)
-if os.environ.get('HEROKU') is not None:
+if os.environ.get('IS_HEROKU') is not None:
     stream_handler = logging.StreamHandler()
     logger.addHandler(stream_handler)
 else:
