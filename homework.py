@@ -1,8 +1,8 @@
+import logging
 import os
 import time
-
-import logging
 from logging.handlers import RotatingFileHandler
+
 import requests
 import telegram
 from dotenv import load_dotenv
@@ -45,7 +45,7 @@ def parse_homework_status(homework):
 
 def get_homework_statuses(current_timestamp):
     params = {
-        'from_date': 0
+        'from_date': current_timestamp
     }
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     method = 'user_api/homework_statuses/'
