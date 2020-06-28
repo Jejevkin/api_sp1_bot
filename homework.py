@@ -46,7 +46,7 @@ def parse_homework_status(homework):
     #     verdict = statuses_types['rejected']
     # else:
     #     verdict = f'Неизвестный статус домашнего задания: {status}'
-    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}\n\n{os.environ.get("HEROKU")}'
 
 
 def get_homework_statuses(current_timestamp):
