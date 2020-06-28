@@ -47,7 +47,7 @@ def parse_homework_status(homework):
     # else:
     #     verdict = f'Неизвестный статус домашнего задания: {status}'
     return f'У вас проверили работу "{homework_name}"!\n\n{verdict}' \
-           f'\n\n{os.environ.get("IS_HEROKU")}' \
+           f'\n\n{os.environ.get("DYNO")}' \
            f'\n\n{os.environ.get("THEANSWERTOEVERYTHINGEVER")}'
 
 
