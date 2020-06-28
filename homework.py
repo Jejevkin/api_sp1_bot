@@ -17,7 +17,7 @@ BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
 logger = logging.getLogger("Botlog")
 logger.setLevel(logging.INFO)
-if os.environ.get('IS_HEROKU') is not None:
+if os.environ.get('DYNO') is not None:
     stream_handler = logging.StreamHandler()
     logger.addHandler(stream_handler)
 else:
@@ -40,15 +40,7 @@ def parse_homework_status(homework):
     verdict = statuses_types.get(status)
     if verdict is None or homework_name is None:
         return 'Неизвестная структура ответа сервера.'
-    # if status == 'approved':
-    #     verdict = statuses_types['approved']
-    # elif status == 'rejected':
-    #     verdict = statuses_types['rejected']
-    # else:
-    #     verdict = f'Неизвестный статус домашнего задания: {status}'
-    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}' \
-           f'\n\n{os.environ.get("DYNO")}' \
-           f'\n\n{os.environ.get("THEANSWERTOEVERYTHINGEVER")}'
+    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
 
 def get_homework_statuses(current_timestamp):
@@ -65,12 +57,10 @@ def get_homework_statuses(current_timestamp):
         logger.exception('Произошла ошибка при запросе данных с сервера:')
         empty_dict = {}
         return empty_dict
-        # raise Exception(f'requests.get: {e}')
     except ValueError:
         logger.exception('Ответ сервера не в формате JSON:')
         empty_dict = {}
         return empty_dict
-        # raise ValueError(f'.json(): {e}')
     return homework_statuses
 
 
