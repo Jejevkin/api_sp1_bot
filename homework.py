@@ -1,6 +1,8 @@
 import os
 import time
 
+import logging
+from logging.handlers import RotatingFileHandler
 import requests
 import telegram
 from dotenv import load_dotenv
@@ -13,6 +15,19 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 URL_PRACTICUM_API = 'https://praktikum.yandex.ru/api/'
 BOT = telegram.Bot(token=TELEGRAM_TOKEN)
 
+logger = logging.getLogger("Botlog")
+logger.setLevel(logging.INFO)
+if os.environ.get('HEROKU') is not None:
+    stream_handler = logging.StreamHandler()
+    logger.addHandler(stream_handler)
+else:
+    file_handler = RotatingFileHandler("Botlog.log", maxBytes=1024 * 1024,
+                                       backupCount=2)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
 
 def parse_homework_status(homework):
     status = homework.get('status')
@@ -22,32 +37,38 @@ def parse_homework_status(homework):
                     'следующему уроку.',
         'rejected': 'К сожалению в работе нашлись ошибки.'
     }
-    if status is None or homework_name is None:
+    verdict = statuses_types.get(status)
+    if verdict is None or homework_name is None:
         return 'Неизвестная структура ответа сервера.'
-    if status == 'approved':
-        verdict = statuses_types['approved']
-    elif status == 'rejected':
-        verdict = statuses_types['rejected']
-    else:
-        verdict = f'Неизвестный статус домашнего задания: {status}'
+    # if status == 'approved':
+    #     verdict = statuses_types['approved']
+    # elif status == 'rejected':
+    #     verdict = statuses_types['rejected']
+    # else:
+    #     verdict = f'Неизвестный статус домашнего задания: {status}'
     return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
 
 def get_homework_statuses(current_timestamp):
     params = {
-        'from_date': current_timestamp
+        'from_date': 0
     }
     headers = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
     method = 'user_api/homework_statuses/'
     try:
         response = requests.get(f'{URL_PRACTICUM_API}{method}',
                                 headers=headers, params=params)
-    except requests.exceptions.RequestException as e:
-        raise Exception(f'requests.get: {e}')
-    try:
         homework_statuses = response.json()
-    except ValueError as e:
-        raise ValueError(f'.json(): {e}')
+    except requests.exceptions.RequestException:
+        logger.exception('Произошла ошибка при запросе данных с сервера:')
+        empty_dict = {}
+        return empty_dict
+        # raise Exception(f'requests.get: {e}')
+    except ValueError:
+        logger.exception('Ответ сервера не в формате JSON:')
+        empty_dict = {}
+        return empty_dict
+        # raise ValueError(f'.json(): {e}')
     return homework_statuses
 
 
@@ -57,6 +78,7 @@ def send_message(message):
 
 def main():
     current_timestamp = int(time.time())
+    logger.info('Бот запущен.')
 
     while True:
         try:
@@ -66,6 +88,7 @@ def main():
             if new_homework.get('homeworks'):
                 send_message(
                     parse_homework_status(new_homework.get('homeworks')[0]))
+                logger.info('Сообщение успешно отправлено.')
             current_timestamp = new_homework.get('current_date')
             time.sleep(300)
 
